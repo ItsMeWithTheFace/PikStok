@@ -1,0 +1,17 @@
+.comment {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0px 10px;
+  background-color: #9B72A2;
+}
+
+.comment_info {
+  display: flex;
+  flex-flow: column wrap;
+  flex-grow: 1;
+}
+
+.comment_date {
+  text-decoration: gray;
+}

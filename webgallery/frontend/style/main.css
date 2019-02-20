@@ -1,0 +1,120 @@
+* {
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Overrides */
+
+hr {
+  color: #DFCCC3;
+  border-width: 1px;
+}
+
+textarea {
+  resize: none;
+}
+
+header {
+  padding: 15px 0px;
+}
+
+header a {
+  text-decoration: none;
+  font-size: 55px;
+  color: black;
+}
+
+div {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+body {
+  max-width: 700px;
+  margin: auto;
+}
+
+footer {
+  text-align: center;
+}
+
+/* Classes */
+
+.btn {
+  display: inline-block;
+  background-image: none;
+  font-size: 14px;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+
+.heading {
+  font-size: 25px;
+  border: #DFCCC3
+}
+
+.chromatic {
+  text-shadow: 3px 2px 2px rgba(251, 12, 12,1), 0px -1px 3px rgba(12, 79, 251,.5),-3px 0px 2px rgba(52, 251, 12, 1);
+  animation: chromaticMove 4500 ease alternate, pulse ease 200ms alternate;
+}
+
+.image {
+  padding: 15px;
+  background-color: #E4132A;
+  justify-content: center;
+}
+
+.image img {
+  max-width: 650px;
+  max-height: 650px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  border: 5px #DFCCC3 solid;
+}
+
+.light_brown_btn {
+  background-color: #DFCCC3;
+}
+
+/* Special Effects and Elements */
+
+#toggle {
+  text-align: right;
+}
+
+.shadow {
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  transition: all 0.3s ease-in-out;
+}
+
+.shadow:hover {
+  transform: scale(1.01, 1.01);
+}
+
+.shadow:hover::after {
+  opacity: 1;
+}
+
+.shadow::after {
+  box-shadow: 0 0 311px rgba(33,33,33,.2);
+  z-index: -1;
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  transition: opacity 0.3s ease-in-out;
+  opacity: 0;
+}
+
+@keyframes pulse { 
+  0% { opacity:.9;transform: skewX(.5deg);}
+  25% { opacity:1;}
+  50% {opacity:.9;}
+  75% { opacity:1; transform:skewX(.5deg);}
+  100% {opacity:.9;}
+}
+
+@keyframes chromaticMove { 
+  0% { text-shadow: 3px 2px 2px rgba(251, 12, 12,1), 0px -1px 3px rgba(12, 79, 251,.5),0px 0px 2px rgba(52, 251, 12, 1);}
+  50% { text-shadow: 3px 2px 2px rgba(251, 12, 12,1), 0px -1px 3px rgba(12, 79, 251,.5),-3px 2px 3px rgba(52, 251, 12, 1);}
+  100% { text-shadow: 3px 2px 2px rgba(251, 12, 12,1), 0px -1px 3px rgba(12, 79, 251,.5),2px -1px 2px rgba(52, 251, 12, 1);}
+}

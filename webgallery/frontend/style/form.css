@@ -1,0 +1,24 @@
+.form_box {
+  display: block;
+  flex-grow: 1;
+  margin-right: 10px;
+  height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #9B72A2;
+  border-radius: 10px;
+  font-size: 14px;
+  background-color: #EFF6FA;
+  margin-bottom: 7px;
+}
+
+.add_form_info {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.add_form {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  background-color: #0A99C7;
+}

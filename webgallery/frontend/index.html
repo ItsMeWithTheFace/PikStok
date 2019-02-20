@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Pik Stok</title>
+  <link href="https://fonts.googleapis.com/css?family=Fredoka+One" rel="stylesheet" />
+  <link href="style/main.css" rel="stylesheet" type="text/css"/>
+  <link href="style/form.css" rel="stylesheet" type="text/css"/>
+  <link href="style/comment.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+  <div class="content">
+    <header>
+      <a href="/" id="title" class="chromatic">Pik Stok</a>
+    </header>
+
+    <p id="error_box"></p>
+
+    <div id="toggle">[-]</div>
+
+    <form id="add_image_form" class="shadow add_form">
+      <div class="heading">Add Image</div>
+      <div class="add_form_info">
+        <input type="text" id="post_title" class="form_box" placeholder="Enter a title" name="title" required />
+        <input type="text" id="post_author" class="form_box" placeholder="Enter your name" name="author" required />
+      </div>
+      <input type="file" id="post_image" class="form_box" name="image"  accept="image/*" required />
+      <button id="submit_image" type="submit" class="btn light_brown_btn" value="submit_image">Upload Image</button>
+    </form>
+
+    <div id="image_content"></div>
+
+    <form></form>
+  </div>
+  <footer>
+    <a href='./credits.html'>credits</a>
+  </footer>
+  <script src="js/api.js"></script>
+  <script src="js/index.js"></script>
+</body>
+</html>
