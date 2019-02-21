@@ -10,6 +10,8 @@
   const bodyParser = require('body-parser');
   const nedb = require('nedb');
   const http = require('http');
+  const cookie = require('cookie');
+  const crypto = require('crypto');
   
   const upload = multer({ dest: 'uploads/' });
   const app = express();
@@ -18,11 +20,75 @@
   
   const images = new nedb({ filename: './db/images.db', autoload: true, timestampData: true });
   const comments = new nedb({ filename: './db/comments.db', autoload: true, timestampData: true });
+  const users = new nedb({ filename: './db/users.db', autoload: true });
   
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
   app.use(express.static('frontend'));
-  
+
+  app.use((req, res, next) => {
+    req.username = ('username' in req.session) ? req.session.username : null;
+    next();
+  });
+
+  const isAuthenticated = (req, res, next) => {
+    if (!req.username) return res.status(401).end('access denied');
+    next();
+  };
+
+  // signup a new user
+  app.post('/api/signup/', (req, res) => {
+    const { username, password } = req.body;
+    const salt = crypto.randomBytes(16).toString('base64');
+    const hash = crypto.createHmac('sha512', salt);
+    hash.update(password);
+    const saltedHash = hash.digest('base64');
+
+    users.findOne({ _id: username }, { _id: username, password: saltedHash, salt }, { upsert: true }, (err) => {
+      if (err) return res.status(500).end(err);
+      // initialize cookie
+      res.setHeader('Set-Cookie', cookie.serialize('username', username, {
+        path : '/', 
+        maxAge: 60 * 60 * 24 * 7
+      }));
+      return res.json("user " + username + " signed up");
+    });
+  });
+
+  // sign in
+  app.post('/signin/', (req, res, next) => {
+    const { username, password } = req.body;
+    
+    // retrieve user from the database
+    users.findOne({ _id: username }, (err, user) => {
+        if (err) return res.status(500).end(err);
+        if (!user) return res.status(401).end("access denied");
+
+        const hash = crypto.createHmac('sha512', user.salt);
+        hash.update(password);
+        const saltedHash = hash.digest('base64');
+
+        if (user.password !== saltedHash) return res.status(401).end("access denied");
+        req.session.username = username;
+        // initialize cookie
+        res.setHeader('Set-Cookie', cookie.serialize('username', username, {
+          path : '/', 
+          maxAge: 60 * 60 * 24 * 7
+        }));
+        return res.json("user " + username + " signed in");
+    });
+  });
+
+  // sign out
+  app.get('/signout/', (req, res, next) => {
+    res.setHeader('Set-Cookie', cookie.serialize('username', '', {
+          path : '/', 
+          maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
+    }));
+    req.session.destroy();
+    res.status(200).end("successfully logged out");
+  });
+
   // create image
   app.post('/api/images/', upload.single('image'), (req, res) => {
     const { file } = req;
