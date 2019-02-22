@@ -165,6 +165,10 @@
       err_box.style.visibility = 'visible';
     });
 
+    api.onUserUpdate(username => {
+      if (!username) window.location.href = '/login.html';
+    });
+
     // add image/comment listener
     api.onImageUpdate((imageMetadata, comments) => { rerenderItems(imageMetadata, comments); });
     api.onCommentUpdate((imageMetadata, comments) => { rerenderItems(imageMetadata, comments); });

@@ -107,7 +107,7 @@ const api = (function(){
   module.signout = () => {
     send('GET', '/api/signout/', null, null, (err, res) => {
       if (err) notifyErrorListeners(err);
-      notifyListeners();
+      notifyUserListeners();
     });
   };
 
