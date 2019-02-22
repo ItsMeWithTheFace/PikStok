@@ -185,6 +185,12 @@
       }
     });
 
+    // logout button (for now)
+    const logoutbutton = document.getElementById('logout');
+    logoutbutton.addEventListener('click', (e) => {
+      api.signout();
+    });
+
     document.getElementById('add_image_form').addEventListener('submit', (e) => {
       e.preventDefault();
       const author = document.getElementById('post_author').value;
