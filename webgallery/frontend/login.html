@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Pik Stok</title>
+  <link href="https://fonts.googleapis.com/css?family=Fredoka+One" rel="stylesheet" />
+  <link href="style/main.css" rel="stylesheet" type="text/css"/>
+  <link href="style/form.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+  <div class="content">
+    <header>
+      <a href="/" id="title" class="chromatic">Pik Stok</a>
+    </header>
+
+    <p id="error_box"></p>
+
+    <form id="login_form" class="shadow add_form">
+      <div class="heading">Login/Signup</div>
+      <div class="add_form_info">
+        <input type="text" id="username" class="form_box" placeholder="Enter a username" name="username" required />
+        <input type="password" id="password" class="form_box" placeholder="Enter a password" name="password" required />
+      </div>
+      <div class="add_form_info">
+        <button id="signin" name="action" class="btn light_brown_btn" value="signin">Sign In</button>
+        <button id="signup" name="action" class="btn light_brown_btn" value="signup">Sign Up</button>
+      </div>
+    </form>
+
+  </div>
+  <footer>
+    <a href='./credits.html'>credits</a>
+  </footer>
+  <script src="js/api.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
