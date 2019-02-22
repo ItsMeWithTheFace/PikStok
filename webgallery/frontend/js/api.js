@@ -5,6 +5,7 @@ const api = (function(){
 
   let module = {};
   const listeners = [];
+  const userListeners = [];
   const errorListeners = [];
   
   /*  ******* Data types *******
@@ -47,6 +48,9 @@ const api = (function(){
     }
   };
 
+  const getUsername = () =>
+    document.cookie.replace(/(?:(?:^|.*;\s*)username\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+  
   // gets the image metadata and the comments
   const getImageMetadataAndComments = (imageId, page) => {
     api.getImage(imageId, (err, imageMetadata) => {
@@ -78,6 +82,33 @@ const api = (function(){
 
   const notifyErrorListeners = (err) => {
     errorListeners.forEach(listener => { listener(err); });
+  };
+
+  const notifyUserListeners = username => {
+    userListeners.forEach(listener => {
+      listener(username);
+    });
+  };
+
+  module.signin = (username, password) => {
+    send('POST', '/api/signin/', { username, password }, 'application/json', (err, res) => {
+      if (err) return notifyErrorListeners(err);
+      notifyUserListeners(getUsername());
+    });
+  };
+
+  module.signup = (username, password) => {
+    send('POST', '/api/signup/', { username, password }, 'application/json', (err, res) => {
+      if (err) notifyErrorListeners(err);
+      notifyUserListeners(getUsername());
+    });
+  };
+
+  module.signout = () => {
+    send('GET', '/api/signout/', null, null, (err, res) => {
+      if (err) notifyErrorListeners(err);
+      notifyListeners();
+    });
   };
 
   // changes the image page
@@ -194,8 +225,15 @@ const api = (function(){
   };
 
   // register an error listener to be notified when an error propagates
-  module.onErrorUpdate = (listener) => {
+  module.onErrorUpdate = listener => {
     errorListeners.push(listener);
+  };
+
+  // register a user listener to be
+  // notified of login events
+  module.onUserUpdate = listener => {
+    userListeners.push(listener);
+    listener(getUsername());
   };
 
   const refresh = (imageId) => {
