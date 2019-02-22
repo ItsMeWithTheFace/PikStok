@@ -6,6 +6,7 @@
   const fs = require('fs');
   const path = require('path');
   const express = require('express');
+  const session = require('express-session');
   const multer = require('multer');
   const bodyParser = require('body-parser');
   const nedb = require('nedb');
@@ -26,6 +27,12 @@
   app.use(bodyParser.json());
   app.use(express.static('frontend'));
 
+  app.use(session({
+    secret: 'please change this secret',
+    resave: false,
+    saveUninitialized: true,
+  }));
+
   app.use((req, res, next) => {
     req.username = ('username' in req.session) ? req.session.username : null;
     next();
@@ -44,49 +51,53 @@
     hash.update(password);
     const saltedHash = hash.digest('base64');
 
-    users.findOne({ _id: username }, { _id: username, password: saltedHash, salt }, { upsert: true }, (err) => {
+    users.findOne({ _id: username }, (err, user) => {
       if (err) return res.status(500).end(err);
+      if (user) return res.status(409).end(`username ${username} already exists`);
+      users.update({ _id: username },{ _id: username, password: saltedHash, salt }, { upsert: true }, err => {
+          if (err) return res.status(500).end(err);
+          // initialize cookie
+          res.setHeader('Set-Cookie', cookie.serialize('username', username, {
+            path : '/', 
+            maxAge: 60 * 60 * 24 * 7
+          }));
+          return res.json(`user ${username} signed up`);
+      });
+    });
+  });
+
+  // sign in
+  app.post('/api/signin/', (req, res) => {
+    const { username, password } = req.body;
+    
+    // retrieve user from the database
+    users.findOne({ _id: username }, (err, user) => {
+      if (err) return res.status(500).end(err);
+      if (!user) return res.status(401).end('access denied');
+
+      const hash = crypto.createHmac('sha512', user.salt);
+      hash.update(password);
+      const saltedHash = hash.digest('base64');
+
+      if (user.password !== saltedHash) return res.status(401).end('access denied');
+      req.session.username = username;
       // initialize cookie
       res.setHeader('Set-Cookie', cookie.serialize('username', username, {
         path : '/', 
         maxAge: 60 * 60 * 24 * 7
       }));
-      return res.json("user " + username + " signed up");
-    });
-  });
-
-  // sign in
-  app.post('/signin/', (req, res, next) => {
-    const { username, password } = req.body;
-    
-    // retrieve user from the database
-    users.findOne({ _id: username }, (err, user) => {
-        if (err) return res.status(500).end(err);
-        if (!user) return res.status(401).end("access denied");
-
-        const hash = crypto.createHmac('sha512', user.salt);
-        hash.update(password);
-        const saltedHash = hash.digest('base64');
-
-        if (user.password !== saltedHash) return res.status(401).end("access denied");
-        req.session.username = username;
-        // initialize cookie
-        res.setHeader('Set-Cookie', cookie.serialize('username', username, {
-          path : '/', 
-          maxAge: 60 * 60 * 24 * 7
-        }));
-        return res.json("user " + username + " signed in");
+      return res.json(`user ${username} signed in`);
     });
   });
 
   // sign out
-  app.get('/signout/', (req, res, next) => {
+  app.get('/api/signout/', (req, res) => {
     res.setHeader('Set-Cookie', cookie.serialize('username', '', {
-          path : '/', 
-          maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
+      path : '/', 
+      maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
     }));
     req.session.destroy();
-    res.status(200).end("successfully logged out");
+    res.status(200).json('successfully logged out');
   });
 
   // create image
