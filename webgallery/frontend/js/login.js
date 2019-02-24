@@ -14,7 +14,7 @@
       err_box.style.visibility = 'visible';
     });
 
-    api.onUserUpdate(username => {
+    api.onSessionUpdate(username => {
       if (username) window.location.href = '/';
     });
 

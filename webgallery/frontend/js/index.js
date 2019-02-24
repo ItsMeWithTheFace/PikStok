@@ -165,9 +165,24 @@
       err_box.style.visibility = 'visible';
     });
 
-    api.onUserUpdate(username => {
+    api.onSessionUpdate(username => {
+      console.log(username);
       if (!username) window.location.href = '/login.html';
     });
+
+    api.onUserUpdate(usernames => {
+      document.querySelector('#gallery_username').innerHTML = '';
+      if (usernames.length === 0) document.querySelector('#welcome_message').classList.remove('hidden');
+      else {
+        document.querySelector('#create_message_form').classList.remove('hidden');
+        usernames.forEach(function(username){
+          var elmt = document.createElement('option');
+          elmt.value = username.username;
+          elmt.innerHTML= username.username;
+          document.querySelector('#post_username').prepend(elmt);
+        });
+      };
+  });
 
     // add image/comment listener
     api.onImageUpdate((imageMetadata, comments) => { rerenderItems(imageMetadata, comments); });
