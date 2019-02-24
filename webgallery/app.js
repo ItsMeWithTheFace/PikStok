@@ -100,6 +100,14 @@
     res.status(200).json('successfully logged out');
   });
 
+  // get all users
+  app.get('/api/users', (req, res) => {
+    users.find({}, {}, (err, users) => {
+      if (err) return res.status(500).end(err);
+      return res.json(users);
+    });
+  });
+
   // create image
   app.post('/api/images/', upload.single('image'), (req, res) => {
     const { file } = req;
