@@ -5,6 +5,7 @@ const api = (function(){
 
   let module = {};
   const listeners = [];
+  const sessionListeners = [];
   const userListeners = [];
   const errorListeners = [];
   
@@ -48,8 +49,12 @@ const api = (function(){
     }
   };
 
-  const getUsername = () =>
+  const getSession = () =>
     document.cookie.replace(/(?:(?:^|.*;\s*)username\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+
+  const getUsers = callback => {
+    send('GET', '/api/users/', null, null, callback);
+  };
   
   // gets the image metadata and the comments
   const getImageMetadataAndComments = (imageId, page) => {
@@ -84,8 +89,8 @@ const api = (function(){
     errorListeners.forEach(listener => { listener(err); });
   };
 
-  const notifyUserListeners = username => {
-    userListeners.forEach(listener => {
+  const notifysessionListeners = username => {
+    sessionListeners.forEach(listener => {
       listener(username);
     });
   };
@@ -93,21 +98,21 @@ const api = (function(){
   module.signin = (username, password) => {
     send('POST', '/api/signin/', { username, password }, 'application/json', (err, res) => {
       if (err) return notifyErrorListeners(err);
-      notifyUserListeners(getUsername());
+      notifysessionListeners(getSession());
     });
   };
 
   module.signup = (username, password) => {
     send('POST', '/api/signup/', { username, password }, 'application/json', (err, res) => {
       if (err) notifyErrorListeners(err);
-      notifyUserListeners(getUsername());
+      notifysessionListeners(getSession());
     });
   };
 
   module.signout = () => {
     send('GET', '/api/signout/', null, null, (err, res) => {
       if (err) notifyErrorListeners(err);
-      notifyUserListeners();
+      notifysessionListeners();
     });
   };
 
@@ -229,12 +234,20 @@ const api = (function(){
     errorListeners.push(listener);
   };
 
-  // register a user listener to be
+  // register a session listener to be
   // notified of login events
+  module.onSessionUpdate = listener => {
+    sessionListeners.push(listener);
+    listener(getSession());
+  };
+
   module.onUserUpdate = listener => {
     userListeners.push(listener);
-    listener(getUsername());
-  };
+    getUsers((err, users) => {
+      if (err) return notifyErrorListeners(err);
+      listener(users);
+    });
+}
 
   const refresh = (imageId) => {
     setTimeout(function(e){
