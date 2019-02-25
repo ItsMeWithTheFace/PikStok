@@ -28,7 +28,7 @@
   app.use(express.static('frontend'));
 
   app.use(session({
-    secret: 'please change this secret',
+    secret: 'rakinnikar',
     resave: false,
     saveUninitialized: true,
   }));
@@ -101,7 +101,7 @@
   });
 
   // get all users
-  app.get('/api/users', (req, res) => {
+  app.get('/api/users/', (req, res) => {
     users.find({}, {}, (err, users) => {
       if (err) return res.status(500).end(err);
       return res.json(users);
@@ -146,6 +146,16 @@
   // read all images
   app.get('/api/images/', (_, res) => {
     images.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
+      if (err) return res.status(500).end(err.message || 'Internal Server Error');
+      return res.json(docs);
+    });
+  });
+
+  // read all images from a user
+  app.get('/api/images/user/:user_id/', (req, res) => {
+    const { user_id } = req.params;
+
+    images.find({ author: user_id }).sort({ createdAt: -1 }).exec((err, docs) => {
       if (err) return res.status(500).end(err.message || 'Internal Server Error');
       return res.json(docs);
     });
