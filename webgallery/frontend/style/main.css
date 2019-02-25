@@ -39,6 +39,10 @@ footer {
 
 /* Classes */
 
+.hidden {
+  visibility: hidden;
+}
+
 .btn {
   display: inline-block;
   background-image: none;
