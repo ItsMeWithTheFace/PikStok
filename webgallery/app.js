@@ -91,7 +91,7 @@
   });
 
   // sign out
-  app.get('/api/signout/', (req, res) => {
+  app.get('/api/signout/', isAuthenticated, (req, res) => {
     res.setHeader('Set-Cookie', cookie.serialize('username', '', {
       path : '/', 
       maxAge: 60 * 60 * 24 * 7 // 1 week in number of seconds
@@ -109,7 +109,7 @@
   });
 
   // create image
-  app.post('/api/images/', upload.single('image'), (req, res) => {
+  app.post('/api/images/', isAuthenticated, upload.single('image'), (req, res) => {
     const { file } = req;
     const { title, author } = req.body;
   
@@ -128,7 +128,7 @@
   });
   
   // create comment for image
-  app.post('/api/images/:image_id/comments/', (req, res) => {
+  app.post('/api/images/:image_id/comments/', isAuthenticated, (req, res) => {
     const { image_id } = req.params;
     const { author, content } = req.body;
     const comment = {
@@ -144,7 +144,7 @@
   });
   
   // read all images
-  app.get('/api/images/', (_, res) => {
+  app.get('/api/images/', isAuthenticated, (_, res) => {
     images.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
       if (err) return res.status(500).end(err.message || 'Internal Server Error');
       return res.json(docs);
@@ -152,7 +152,7 @@
   });
 
   // read all images from a user
-  app.get('/api/images/user/:user_id/', (req, res) => {
+  app.get('/api/images/user/:user_id/', isAuthenticated, (req, res) => {
     const { user_id } = req.params;
 
     images.find({ author: user_id }).sort({ createdAt: -1 }).exec((err, docs) => {
@@ -162,7 +162,7 @@
   });
   
   // read specific image
-  app.get('/api/images/:image_id/', (req, res) => {
+  app.get('/api/images/:image_id/', isAuthenticated, (req, res) => {
     const { image_id } = req.params;
   
     images.findOne({ _id: image_id }, (err, doc) => {
@@ -173,7 +173,7 @@
   });
   
   // get the raw image content
-  app.get('/api/images/:image_id/image', (req, res) => {
+  app.get('/api/images/:image_id/image', isAuthenticated, (req, res) => {
     const { image_id } = req.params;
 
     images.findOne({ _id: image_id }, (err, doc) => {
@@ -185,7 +185,7 @@
   });
   
   // get image's comments
-  app.get('/api/images/:image_id/comments/', (req, res) => {
+  app.get('/api/images/:image_id/comments/', isAuthenticated, (req, res) => {
     const { image_id } = req.params;
     const { page } = req.query;
   
@@ -200,12 +200,13 @@
   });
   
   // delete image
-  app.delete('/api/images/:image_id/', (req, res) => {
+  app.delete('/api/images/:image_id/', isAuthenticated, (req, res) => {
     const { image_id } = req.params;
   
     images.findOne({ _id: image_id }, (err, doc) => {
       if (err) return res.status(500).end(err.message || 'Internal Server Error');
       else if (!doc) return res.status(404).end(`Image with id "${image_id}" could not be found.`);
+      else if (doc.author !== req.username) return res.status(401).end('access denied');
   
       // remove the file from storage
       fs.unlink(path.join(__dirname, doc.imageData.path), (err) => {
@@ -226,12 +227,13 @@
   });
   
   // delete comment
-  app.delete('/api/comments/:comment_id/', (req, res) => {
+  app.delete('/api/comments/:comment_id/', isAuthenticated, (req, res) => {
     const { comment_id } = req.params;
   
     comments.findOne({ _id: comment_id }, (err, doc) => {
       if (err) return res.status(500).end(err.message || 'Internal Server Error');
       else if (!doc) return res.status(404).end(`Comment with id "${comment_id}" could not be found.`);
+      else if (doc.author !== req.username) return res.status(401).end('access denied');
   
       comments.remove({ _id: comment_id }, {}, (err, numRemoved) => {
         if (err) return res.status(500).end(err.message || 'Internal Server Error');
