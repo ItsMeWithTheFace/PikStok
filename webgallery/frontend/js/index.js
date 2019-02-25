@@ -63,7 +63,6 @@
     elmt.className = 'shadow add_form';
     elmt.innerHTML = `
       <div class="comment_form_title heading">Add Comment</div>
-      <input type="text" id="comment_author" class="comment_form_author form_box" placeholder="Enter your name" name="comment_author" required />
       <textarea type="text" id="comment_text" class="comment_form_element form_box" placeholder="Enter your comment" name="comment_text" required></textarea>
       <button type="submit" class="btn light_brown_btn" value="submit_comment">Submit Comment</button>
     `;
@@ -73,10 +72,9 @@
     elmt.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      const author = elmt.querySelector('input').value;
       const content = elmt.querySelector('textarea').value;
 
-      if (e.target.id === 'add_comment_form') api.addComment(imageId, author, content);
+      if (e.target.id === 'add_comment_form') api.addComment(imageId, content);
     });
 
     return elmt;
@@ -165,24 +163,30 @@
       err_box.style.visibility = 'visible';
     });
 
+    // kick user out if they're not logged in
     api.onSessionUpdate(username => {
-      console.log(username);
       if (!username) window.location.href = '/login.html';
     });
 
-    api.onUserUpdate(usernames => {
-      document.querySelector('#gallery_username').innerHTML = '';
-      if (usernames.length === 0) document.querySelector('#welcome_message').classList.remove('hidden');
+    // figure out the list of users we can look at
+    api.onUserUpdate(users => {
+      const gallery_username = document.querySelector('#gallery_username');
+      gallery_username.innerHTML = '';
+      const elmt = document.createElement('option');
+      elmt.value = 'Select a gallery';
+      elmt.innerHTML = 'Select a gallery';
+      gallery_username.append(elmt);
+      if (users.length === 0) document.querySelector('#welcome_message').classList.remove('hidden');
       else {
-        document.querySelector('#create_message_form').classList.remove('hidden');
-        usernames.forEach(function(username){
-          var elmt = document.createElement('option');
-          elmt.value = username.username;
-          elmt.innerHTML= username.username;
-          document.querySelector('#post_username').prepend(elmt);
+        users.forEach(username => {
+          const elmt = document.createElement('option');
+          elmt.value = username._id;
+          elmt.innerHTML= username._id;
+          if (api.getGallery() === username._id) elmt.selected = 'selected';
+          gallery_username.append(elmt);
         });
       };
-  });
+    });
 
     // add image/comment listener
     api.onImageUpdate((imageMetadata, comments) => { rerenderItems(imageMetadata, comments); });
@@ -206,20 +210,26 @@
 
     // logout button (for now)
     const logoutbutton = document.getElementById('logout');
-    logoutbutton.addEventListener('click', (e) => {
+    logoutbutton.addEventListener('click', () => {
       api.signout();
     });
 
+    // changes the current gallery
+    const select_gallery = document.getElementById('gallery_username');
+    select_gallery.addEventListener('change', () => {
+      const new_gallery = select_gallery.options[select_gallery.selectedIndex].value;
+      api.setGallery(new_gallery);
+    })
+
     document.getElementById('add_image_form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const author = document.getElementById('post_author').value;
       const title = document.getElementById('post_title').value;
       const image = document.getElementById('post_image').files[0];
 
       document.getElementById('add_image_form').reset();
 
       if (e.target.id === 'add_image_form') {
-        api.addImage(title, author, image);
+        api.addImage(title, image);
       }
     });
   });
