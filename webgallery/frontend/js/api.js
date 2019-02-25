@@ -49,9 +49,11 @@ const api = (function(){
     }
   };
 
+  // gets the current username
   const getSession = () =>
     document.cookie.replace(/(?:(?:^|.*;\s*)username\s*\=\s*([^;]*).*$)|^.*$/, "$1");
 
+  // gets all the users
   const getUsers = callback => {
     send('GET', '/api/users/', null, null, callback);
   };
@@ -69,6 +71,7 @@ const api = (function(){
     });
   };
 
+  // notify the image listeners
   const notifyListeners = (user, img=null, page=0) => {
     // default to latest image if no img is given
     if (!img) {
@@ -112,6 +115,7 @@ const api = (function(){
   module.signout = () => {
     send('GET', '/api/signout/', null, null, (err, res) => {
       if (err) notifyErrorListeners(err);
+      destroySession();
       notifysessionListeners();
     });
   };
@@ -179,17 +183,23 @@ const api = (function(){
     send('GET', `/api/images/user/${user}/`, null, null, callback);
   };
 
+  const destroySession = () => {
+    document.cookie = `username=;`;
+  }
+
   // set the current image in memory
   module.setPage = page => {
     const new_page = 'page=';
     window.history.replaceState({}, '', document.location.href.replace(/page=.*/, new_page + page));
   };
 
+  // sets the username of the current viewing gallery
   module.setGallery = user => {
     document.cookie = `currentgallery=${user};expires=${new Date() * 60 * 60 * 7}`;
     notifyListeners(user);
   };
 
+  // gets the current gallery's username
   module.getGallery = () =>
     document.cookie.replace(/(?:(?:^|.*;\s*)currentgallery\s*\=\s*([^;]*).*$)|^.*$/, "$1");
   
@@ -249,6 +259,7 @@ const api = (function(){
     listener(getSession());
   };
 
+  // register a users listener
   module.onUserUpdate = listener => {
     userListeners.push(listener);
     getUsers((err, users) => {
