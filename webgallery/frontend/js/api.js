@@ -69,10 +69,10 @@ const api = (function(){
     });
   };
 
-  const notifyListeners = (img=null, page=0) => {
+  const notifyListeners = (user, img=null, page=0) => {
     // default to latest image if no img is given
     if (!img) {
-      api.getImages((err, imgs) => {
+      api.getImages(user, (err, imgs) => {
         if (err) notifyErrorListeners(err);
         else if (imgs.length === 0) {
           listeners.forEach(listener => {
@@ -83,7 +83,7 @@ const api = (function(){
         }
       });
     } else { getImageMetadataAndComments(img, page); }
-  };
+  }; 
 
   const notifyErrorListeners = (err) => {
     errorListeners.forEach(listener => { listener(err); });
@@ -118,7 +118,7 @@ const api = (function(){
 
   // changes the image page
   module.changeImage = (forward, imageId) => {
-    api.getImages((err, imgs) => {
+    api.getImages(api.getGallery(), (err, imgs) => {
       if (err) notifyErrorListeners(err);
 
       const imgIndex = imgs.findIndex(img => img._id === imageId);
@@ -126,7 +126,7 @@ const api = (function(){
         const newIndex = forward ? (imgIndex + 1) % imgs.length : (imgIndex - 1) % imgs.length;
 
         // js bug doesn't mod negative #'s properly so adding length back into index
-        notifyListeners(imgs[newIndex < 0 ? newIndex + imgs.length : newIndex]._id);
+        notifyListeners(api.getGallery(), imgs[newIndex < 0 ? newIndex + imgs.length : newIndex]._id);
       }
     });
   };
@@ -137,7 +137,7 @@ const api = (function(){
       if (err) notifyErrorListeners(err);
 
       if (cmts.length !== 0)
-        notifyListeners(imageId, page);
+        notifyListeners(api.getGallery(), imageId, page);
       else {
         // if no items available go back to the previous page
         if (forward) api.setPage(page - 1);
@@ -147,55 +147,63 @@ const api = (function(){
   };
  
   // add an image to the gallery
-  module.addImage = function(title, author, image){
+  module.addImage = (title, image) => {
     const new_image = {
       title,
-      author,
+      author: getSession(),
       image
     };
 
     send('POST', `/api/images/`, new_image, 'multipart/form-data', (err, img) => {
       if (err) return notifyErrorListeners(err);
-      notifyListeners(img._id);
+      notifyListeners(getSession(), img._id);
     });
   };
 
   // delete an image from the gallery given its imageId
-  module.deleteImage = function(imageId){
+  module.deleteImage = imageId => {
     send('DELETE', `/api/images/${imageId}/`, null, null, (err) => {
       if (err) return notifyErrorListeners(err);
       api.setPage(0);
-      notifyListeners();
+      notifyListeners(api.getGallery());
     });
   };
   
   // get an image from the gallery given its imageId
-  module.getImage = function(imageId, callback) {
+  module.getImage = (imageId, callback) => {
     send('GET', `/api/images/${imageId}/`, null, null, callback);
   };
 
   // get all images
-  module.getImages = function(callback) {
-    send('GET', `/api/images/`, null, null, callback);
+  module.getImages = (user, callback) => {
+    send('GET', `/api/images/user/${user}/`, null, null, callback);
   };
 
   // set the current image in memory
-  module.setPage = (page) => {
+  module.setPage = page => {
     const new_page = 'page=';
     window.history.replaceState({}, '', document.location.href.replace(/page=.*/, new_page + page));
   };
+
+  module.setGallery = user => {
+    document.cookie = `currentgallery=${user};expires=${new Date() * 60 * 60 * 7}`;
+    notifyListeners(user);
+  };
+
+  module.getGallery = () =>
+    document.cookie.replace(/(?:(?:^|.*;\s*)currentgallery\s*\=\s*([^;]*).*$)|^.*$/, "$1");
   
   // add a comment to an image
-  module.addComment = function(imageId, author, content){
+  module.addComment = (imageId, content) => {
     const data = {
       image_id: imageId,
-      author,
+      author: getSession(),
       content
     };
 
     send('POST', `/api/images/${imageId}/comments/`, data, 'application/json', (err) => {
       if (err) return notifyErrorListeners(err);
-      notifyListeners(imageId);
+      notifyListeners(api.getGallery(), imageId);
     });
   };
   
@@ -204,7 +212,7 @@ const api = (function(){
     send('DELETE', `/api/comments/${commentId}/`, null, null, (err, oldCmt) => {
       if (err) return notifyErrorListeners(err);
       api.setPage(0);
-      notifyListeners(oldCmt.image_id);
+      notifyListeners(api.getGallery(), oldCmt.image_id);
     });
   };
   
@@ -219,14 +227,14 @@ const api = (function(){
   // to be notified when an image is added or deleted from the gallery
   module.onImageUpdate = function(listener){
     listeners.push(listener);
-    notifyListeners();
+    notifyListeners(api.getGallery());
   };
   
   // register an comment listener
   // to be notified when a comment is added or deleted to an image
   module.onCommentUpdate = function(listener){
     listeners.push(listener);
-    notifyListeners();
+    notifyListeners(api.getGallery());
   };
 
   // register an error listener to be notified when an error propagates
@@ -247,11 +255,11 @@ const api = (function(){
       if (err) return notifyErrorListeners(err);
       listener(users);
     });
-}
+  }
 
   const refresh = (imageId) => {
-    setTimeout(function(e){
-        notifyListeners(imageId);
+    setTimeout((e) => {
+        notifyListeners(api.getGallery(), imageId);
         refresh();
     }, 2000);
   };
