@@ -1,70 +1,382 @@
-The objective of these assignments is to build an application called *The Web Gallery* where users can share pictures and comments. This application is similar to existing web applications such as Facebook (the photo album part), Picasa or Flickr. 
+# Pik Stok API Docs
 
-# Managing users and Security
+## Introduction
+Welcome to the Pik Stok API docs! Here you will find instructions on how to use the API and the types of behaviour you can expect.
 
-In this last assignment, you will concentrate on managing the users. 
+## Authentication
 
-## Instructions
+### Signin
 
-For this assignment, you should use Node.js, the Express web framework and the embedded NoSQL database NeDB to build your back-end. Fee free to use any additional Node.js utility packages as needed. Make sure that all of these required packages are recorded in the `package.json` file. 
+- Description: signin to the application
+- Request: `POST /api/signin/`
+  - content-type: `application/json`
+  - body: object
+    - username: (string) user's username
+    - password: (string) user's password
+- Response: 200
+  - content-type: `application/json`
+  - body: string
+    - User with username signed in
+- Response: 401
+  - content-type: `application/json`
+  - body: string
+    - If credentials were incorrect, access denied
 
-### Code quality and organization
+```bash
+$ curl --request POST \
+    --url http://localhost:3000/api/signin/ \
+    --header 'content-type: application/json' \
+    --data '{
+    "username": "kevin",
+    "password": "iscool"
+  }'
+```
 
-All of your work should be placed into a directory called `webgallery`. This directory should be organized as follows:
+### Signout
 
-- `webgallery/app.js`: the main file
-- `webgallery/package.json`: the Node.js package file
-- `webgallery/frontend/`: your frontend (HTML, CSS, Javascript and UI media files)
-- `webgallery/db/`: the NeDB database files
-- `webgallery/uploads/`: the uploaded files
+- Description: signout of the application
+- Request: `GET /api/signout/`
+- Response: 200
+  - content-type: `application/json`
+  - body: string
+    - User with username signed out
+- Response: 401
+  - body: string
+    - Access denied
 
-Your code must be of good quality and follow all guidelines given during lectures and labs. For more details, please refer to the rubric. Remember, any code found online and improperly credited can constitute an academic violation. 
+```bash
+$ curl --request GET \
+    --url http://localhost:3000/api/signout/
+```
 
-### Submission
+### Signup
 
-You should submit your work to your Github course repository. Before submitting your final version. It is strongly recommended to verify that your code is portable. To do so: 
+- Description: signup for the application
+- Request: `POST /api/signup/`
+  - content-type: `application/json`
+  - body: object
+    - username: (string) user's username
+    - password: (string) user's password
+- Response: 200
+  - content-type: `application/json`
+  - body: string
+    - User with username created
+- Response: 409
+  - content-type: `application/json`
+  - body: string
+    - User with username already exists
+- Response: 500
+  - content-type: `application/json`
+  - body: string
+    - Internal server error
 
-- push your work to Github
-- clone it into a new directory
-- install all packages with the single command `npm install` that will install all packages found in the `package.json` file
-- start the app with the command `node app.js` (`nodejs` on Linux)
-- start your app (suing `node` instead of `nodemon`) and verify that it works as expected
+```bash
+$ curl --request POST \
+    --url http://localhost:3000/api/signup/ \
+    --header 'content-type: application/json' \
+    --data '{
+    "username": "kevin",
+    "password": "iscool"
+  }'
+```
 
-## Authenticated Users and Multiple Galleries
+## Create
 
-In this part, you are going to extend your API to support authenticated users and multiple galleries. Each user will now have his/her own gallery. Users will be authenticated through the API (local authentication based on sessions). In addition of supporting these feature, access to the API is ruled by the following authorization policy: 
+### Images
 
-- Non authenticated cannot read any picture nor comment
-- Non-authenticated can sign-up and sign-in into the application
-- Authenticated users can sign-out of the application
-- Authenticated users can browse any gallery
-- Gallery owners can upload and delete pictures to their own gallery only
-- Authenticated users can post comments on any picture of any gallery
-- Authenticated users can delete any one of their own comments but not others
-- Gallery owners can delete any comment on any picture from their own gallery
+- Description: create a new image
+- Request: `POST /api/images/`
+    - content-type: `multipart/form-data`
+    - form-data: list of key/value pairs
+      - title: (string) the title of the image
+      - image: (string) the absolute path to a file
+- Response: 201
+    - content-type: `application/json`
+    - body: object
+      - _id: (string) the image id
+      - title: (string) the title of the image
+      - author: (string) the author's username
+      - imageData: (object) metadata of the uploaded image
+        - fieldname: (string) image field name
+        - originalname: (string) name of the file (image)
+        - encoding: (string) file encoding
+        - mimetype: (string) mimetype of the file
+        - destination: (string) relative path of the image's upload destination
+        - filename: (string) hashed version of the originalname
+        - path: (string) relative path of the file in destination
+        - size: (int) size of the file
+      - createdAt: (Date) the upload date of the image
+      - updatedAt: (Date) the date this image was last updated
+- Response: 400
+  - body: string
+    - Missing required parameters: [title, author, image]
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
-While refactoring your application, you might want to re-design your REST api to reflect the fact that image galleryes are owned by users.  
+```bash
+$ curl --request POST \
+    --url http://localhost:3000/api/images \
+    --form 'title=Great Image' \
+    --form 'author=rakin' \
+    --form 'image=@/home/users/rakin/cat.jpeg'
+```
+> Note: The `@` symbol is necessary in the value of the `image` key when using curl.
 
-As the previous assignment, we provide a starter file called `api.js` for the **the Frontend API**. This api must be refactored and completed.
+### Comments
 
-## Integrating the frontend
+- Description: create a new comment
+- Request: `POST /api/images/:image_id/comments/`
+    - content-type: `application/json`
+    - body: object
+      - content: (string) the comment the author wants to make
+- Response: 201
+    - content-type: `application/json`
+    - body: object
+      - _id: (string) the comment id
+      - image_id: (string) the image id specified in the URL parameter
+      - content: (string) the comment the author wanted to make
+      - author: (string) the author's username
+      - createdAt: (Date) the create date of the comment
+      - updatedAt: (Date) the date this comment was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
-This part of the assignment is worth 10% only and builds on top of what you have already built for assignment 2. Update your current frontend to reflect all changes made above. The homepage should now a paginated list of all galleries that can be browsed. Users should be able to sign-up, sign-in and sign-out into the application and do no longer need to enter their username when adding images and comments.
+```bash
+$ curl --request POST \
+    --url http://localhost:3000/api/images/tIdLeOaSLieftvdu/comments \
+    --header 'content-type: application/json' \
+    --data '{
+    "author": "kevin",
+    "content": "this is great"
+  }'
+```
 
-## Documenting the API
+## Read
 
-As done in assignment 2, update your API documentation to reflect the API changes made above. 
+### Images
 
+- Description: retrieve a list of image metadata
+- Request: `GET /api/images/`
+- Response: 200
+  - content-type: `application/json`
+  - body: [object] (list of objects)
+    - _id: (string) the image id
+    - title: (string) the title of the image
+    - author: (string) the author's username
+    - imageData: (object) metadata of the uploaded image
+      - fieldname: (string) image field name
+      - originalname: (string) name of the file (image)
+      - encoding: (string) file encoding
+      - mimetype: (string) mimetype of the file
+      - destination: (string) relative path of the image's upload destination
+      - filename: (string) hashed version of the originalname
+      - path: (string) relative path of the file in destination
+      - size: (int) size of the file
+    - createdAt: (Date) the upload date of the image
+    - updatedAt: (Date) the date this image was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/images/
+```
 
-  
+- Description: retrieve a list of image metadata filtered by username
+- Request: `GET /api/images/`
+- Response: 200
+  - content-type: `application/json`
+  - body: [object] (list of objects)
+    - _id: (string) the image id
+    - title: (string) the title of the image
+    - author: (string) the author's username
+    - imageData: (object) metadata of the uploaded image
+      - fieldname: (string) image field name
+      - originalname: (string) name of the file (image)
+      - encoding: (string) file encoding
+      - mimetype: (string) mimetype of the file
+      - destination: (string) relative path of the image's upload destination
+      - filename: (string) hashed version of the originalname
+      - path: (string) relative path of the file in destination
+      - size: (int) size of the file
+    - createdAt: (Date) the upload date of the image
+    - updatedAt: (Date) the date this image was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/images/user/kevin/
+```
 
+- Description: retrieve a specific image's metadata
+- Request: `GET /api/images/:image_id`
+- Response: 200
+  - content-type: `application/json`
+  - body: object
+    - _id: (string) the image id
+    - title: (string) the title of the image
+    - author: (string) the author's username
+    - imageData: (object) metadata of the uploaded image
+      - fieldname: (string) image field name
+      - originalname: (string) name of the file (image)
+      - encoding: (string) file encoding
+      - mimetype: (string) mimetype of the file
+      - destination: (string) relative path of the image's upload destination
+      - filename: (string) hashed version of the originalname
+      - path: (string) relative path of the file in destination
+      - size: (int) size of the file
+    - createdAt: (Date) the upload date of the image
+    - updatedAt: (Date) the date this image was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 404
+  - body: string
+    - `image_id` does not exist
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/images/tIdLeOaSLieftvdu
+```
 
+- Description: retrieve the raw image data
+- Request: `GET /api/images/:image_id/image/`
+- Response: 200
+  - content-type: `image/*`
+  - body: string
+    - raw image content
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 404
+  - body: string
+    - `image_id` does not exist
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/images/tIdLeOaSLieftvdu/image/
+```
 
+### Comments
 
+- Description: retrieve the 10 latest comments for an image at page X. If page not given, defaults to `0`
+- Request: `GET /api/images/:image_id/comments/[?page=X]`
+- Response: 200
+  - content-type: `application/json`
+  - body: [object] (list of objects)
+    - _id: (string) unique id of the comment
+    - image_id: (string) id of the image this comment is attached to
+    - author: (string) author's username
+    - content: (string) comment body
+    - createdAt: (Date) date this object was created at
+    - updatedAt: (Date) date this object was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
 
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/images/tIdLeOaSLieftvdu/comments
+```
 
+## Delete
 
+### Images
+
+- Description: deletes a specific image having id `image_id` and its related comments
+- Request: `DELETE /api/images/:image_id/`
+- Response: 200
+  - content-type: `application/json`
+  - body: object
+    - _id: (string) the image id
+    - title: (string) the title of the image
+    - author: (string) the author's username
+    - imageData: (object) metadata of the uploaded image
+      - fieldname: (string) image field name
+      - originalname: (string) name of the file (image)
+      - encoding: (string) file encoding
+      - mimetype: (string) mimetype of the file
+      - destination: (string) relative path of the image's upload destination
+      - filename: (string) hashed version of the originalname
+      - path: (string) relative path of the file in destination
+      - size: (int) size of the file
+    - createdAt: (Date) the upload date of the image
+    - updatedAt: (Date) the date this image was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 404
+  - body: string
+    - `image_id` does not exist
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
+
+```bash
+$ curl --request DELETE \
+  --url http://localhost:3000/api/images/tIdLeOaSLieftvdu/
+```
+
+### Comments
+
+- Description: deletes a specific comment having id `comment_id`
+- Request: `DELETE /api/comments/:comment_id/`
+- Response: 200
+  - body: object
+    - _id: (string) unique id of the comment
+    - image_id: (string) id of the image this comment is attached to
+    - author: (string) author's username
+    - content: (string) comment body
+    - createdAt: (Date) date this object was created at
+    - updatedAt: (Date) date this object was last updated
+- Response: 401
+  - body: string
+    - Access denied
+- Response: 404
+  - body: string
+    - `comment_id` does not exist
+- Response: 500
+  - body: string
+    - Error message returned by the server from the operation
+
+```bash
+$ curl --request DELETE \
+  --url http://localhost:3000/api/comments/L3n4AMuy1eo9qCEy/
+```
+
+## Other Routes
+- Description: requesting any other route
+- Response: 404
+  - body: string
+    - Requested URL cannot be found
+
+```bash
+$ curl --request GET \
+  --url http://localhost:3000/api/weqoejwi/
+```
