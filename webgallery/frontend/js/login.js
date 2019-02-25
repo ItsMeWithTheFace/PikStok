@@ -15,7 +15,7 @@
     });
 
     api.onSessionUpdate(username => {
-      if (username) window.location.href = '/';
+      // if (username) window.history.replaceState({}, '', document.location.href.replace('/login.html', '/'));
     });
 
     const submit = () => {
